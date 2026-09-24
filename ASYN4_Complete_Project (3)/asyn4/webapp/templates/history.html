@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}History - ASYN4{% endblock %}
+{% block content %}
+
+<h1 class="page-title">Calculation history</h1>
+<p class="page-subtitle">Every run is stored in MySQL, including the full input you submitted, so you can reopen and re-check any past calculation.</p>
+
+{% if runs %}
+<table class="history-table">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>When</th>
+      <th>Machine</th>
+      <th>Frame (REKE)</th>
+      <th>Status</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in runs %}
+    <tr>
+      <td>{{ r.id }}</td>
+      <td>{{ r.created_at }}</td>
+      <td>{{ r.machine_name or '—' }}</td>
+      <td>{{ r.reke or '—' }}</td>
+      <td><span class="status-pill {{ r.status }}">{{ r.status }}</span></td>
+      <td>
+        <a class="btn btn-secondary" href="{{ url_for('asyn4.view_run', run_id=r.id) }}">View</a>
+        <form method="POST" action="{{ url_for('asyn4.delete_run', run_id=r.id) }}" style="display:inline"
+              onsubmit="return confirm('Delete this run permanently?');">
+          <button type="submit" class="btn btn-danger">Delete</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div style="margin-top:1.25rem; display:flex; gap:0.75rem;">
+  {% if page > 1 %}
+  <a class="btn btn-secondary" href="{{ url_for('asyn4.history', page=page-1) }}">&larr; Newer</a>
+  {% endif %}
+  {% if runs|length == 25 %}
+  <a class="btn btn-secondary" href="{{ url_for('asyn4.history', page=page+1) }}">Older &rarr;</a>
+  {% endif %}
+</div>
+
+{% else %}
+<div class="messages-panel">No calculations yet. <a href="{{ url_for('asyn4.index') }}">Run your first one</a>.</div>
+{% endif %}
+
+{% endblock %}

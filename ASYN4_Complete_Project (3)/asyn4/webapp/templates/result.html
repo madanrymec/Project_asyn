@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Results - ASYN4{% endblock %}
+{% block content %}
+
+<h1 class="page-title">
+  {{ values.name or 'Calculation results' }}
+  {% if run_id %}<span class="field-unit">&nbsp;run #{{ run_id }}</span>{% endif %}
+</h1>
+{% if values.reke %}<p class="page-subtitle">{{ values.reke }}{% if created_at %} &middot; {{ created_at }}{% endif %}</p>{% endif %}
+
+{% if result.status == 'ok' %}
+  <div class="status-banner status-ok">Calculation completed successfully.</div>
+
+  {% set s = result.summary %}
+  <div class="readout-strip">
+    {% if s.rated_point and s.rated_point.converged %}
+    <div class="readout">
+      <span class="data-value">{{ '%.2f'|format(s.rated_point.p_mech_kw) }} kW</span>
+      <span class="data-label">Rated output</span>
+    </div>
+    <div class="readout">
+      <span class="data-value">{{ '%.1f'|format(s.rated_point.current_a) }} A</span>
+      <span class="data-label">Rated current</span>
+    </div>
+    {% if s.rated_voltage_v %}
+    <div class="readout">
+      <span class="data-value">{{ '%.0f'|format(s.rated_voltage_v) }} V</span>
+      <span class="data-label">Rated voltage</span>
+    </div>
+    {% endif %}
+    <div class="readout">
+      <span class="data-value">{{ '%.3f'|format(s.rated_point.cos_phi) }}</span>
+      <span class="data-label">cos&nbsp;&phi;</span>
+    </div>
+    <div class="readout">
+      <span class="data-value">{{ '%.1f'|format(s.rated_point.efficiency * 100) }}%</span>
+      <span class="data-label">Efficiency</span>
+    </div>
+    {% else %}
+    <div class="readout">
+      <span class="data-value">&mdash;</span>
+      <span class="data-label">Rated point did not converge</span>
+    </div>
+    {% endif %}
+    {% if s.breakdown_torque_nm is not none %}
+    <div class="readout">
+      <span class="data-value">{{ '%.1f'|format(s.breakdown_torque_nm) }} Nm</span>
+      <span class="data-label">Breakdown torque</span>
+    </div>
+    {% endif %}
+    {% if s.locked_rotor_torque_nm is not none %}
+    <div class="readout">
+      <span class="data-value">{{ '%.1f'|format(s.locked_rotor_torque_nm) }} Nm</span>
+      <span class="data-label">Locked-rotor torque</span>
+    </div>
+    {% endif %}
+    {% if s.locked_rotor_current_a is not none %}
+    <div class="readout">
+      <span class="data-value">{{ '%.1f'|format(s.locked_rotor_current_a) }} A</span>
+      <span class="data-label">Locked-rotor current</span>
+    </div>
+    {% endif %}
+    {% if s.active_mass_kg is not none %}
+    <div class="readout">
+      <span class="data-value">{{ '%.1f'|format(s.active_mass_kg) }} kg</span>
+      <span class="data-label">Active mass</span>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if s.starting_endangered %}
+  <div class="status-banner status-validation_error">
+    Warning: a parasitic synchronous torque may endanger starting for this design (see synchronous-torque report).
+  </div>
+  {% endif %}
+
+  {% if result.plot_path and run_id %}
+  <div class="chart-panel">
+    <img src="{{ url_for('asyn4.view_plot', run_id=run_id) }}" alt="Torque / current - speed characteristic">
+  </div>
+  {% endif %}
+
+  {% if run_id %}
+  <div class="download-row">
+    {% if result.pdf_path %}
+    <a class="btn" href="{{ url_for('asyn4.download', run_id=run_id, kind='pdf') }}">Download PDF report</a>
+    {% endif %}
+    {% if result.plot_path %}
+    <a class="btn btn-secondary" href="{{ url_for('asyn4.download', run_id=run_id, kind='plot') }}">Download chart (PNG)</a>
+    {% endif %}
+    <a class="btn btn-secondary" href="{{ url_for('asyn4.download', run_id=run_id, kind='csv:partial_load') }}">Partial-load CSV</a>
+    <a class="btn btn-secondary" href="{{ url_for('asyn4.download', run_id=run_id, kind='csv:summary') }}">Summary CSV</a>
+    <a class="btn btn-secondary" href="{{ url_for('asyn4.download', run_id=run_id, kind='csv:cooling') }}">Cooling CSV</a>
+  </div>
+  {% endif %}
+
+{% elif result.status == 'validation_error' %}
+  <div class="status-banner status-validation_error">{{ result.error_message }}</div>
+  <div class="messages-panel">
+    <strong>Data validation messages:</strong>
+    <ul>
+      {% for is_error, text in result.pruef_messages %}
+      <li class="{{ 'err' if is_error else 'warn' }}">{{ text }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+
+{% else %}
+  <div class="status-banner status-error">The calculation could not be completed.</div>
+  <div class="messages-panel">
+    <strong>Details:</strong>
+    <pre class="error-detail">{{ result.error_message }}</pre>
+  </div>
+{% endif %}
+
+<p>
+  {% if run_id %}
+  <a class="btn" href="{{ url_for('asyn4.edit_run', run_id=run_id) }}">Edit inputs &amp; recalculate</a>
+  {% endif %}
+  <a class="btn btn-secondary" href="{{ url_for('asyn4.index') }}">Start a new calculation</a>
+</p>
+
+{% endblock %}
