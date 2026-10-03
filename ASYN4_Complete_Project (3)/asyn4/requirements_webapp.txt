@@ -1,9 +1,0 @@
-# ASYN4 web application dependencies.
-# Install with: pip install -r requirements_webapp.txt --break-system-packages
-# (drop --break-system-packages if you're using a virtualenv, which is recommended)
-
-flask>=3.0
-pymysql>=1.1
-numpy>=1.24
-matplotlib>=3.7
-reportlab>=4.0
