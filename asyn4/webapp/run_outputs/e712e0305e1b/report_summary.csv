@@ -1,0 +1,10 @@
+Quantity,Value
+Breakdown slip (Kipp),10.793 %
+Breakdown torque,3247.3 Nm
+Locked-rotor torque (theoretical),2784.5 Nm
+Locked-rotor current (theoretical),427.5 A
+"Locked-rotor torque (corrected, KKA=0.50)",3396.6 Nm
+Locked-rotor current (corrected),471.8 A
+Time constant TK,0.0384 s
+Time constant THAUPT (rotor),0.2565 s
+Time constant TSTREU (leakage),0.0069 s

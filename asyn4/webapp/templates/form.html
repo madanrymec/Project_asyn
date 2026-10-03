@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}New calculation - ASYN4{% endblock %}
+{% block content %}
+
+<div class="form-shell">
+  <nav class="section-rail" id="section-rail">
+    {% for section_name, fields in sections.items() %}
+    <a href="#sec-{{ loop.index }}" data-rail-for="{{ section_name }}">
+      <span class="rail-card">{{ fields[0].card }}</span>{{ section_name }}
+    </a>
+    {% endfor %}
+  </nav>
+
+  <div class="form-main">
+    <h1 class="page-title">{% if edit_of_run_id %}Edit and recalculate{% else %}New calculation{% endif %}</h1>
+    {% if edit_of_run_id %}
+    <div class="status-banner status-validation_error" style="margin-bottom:1rem;">
+      Editing values from run #{{ edit_of_run_id }}. Submitting will create a <strong>new</strong> run -
+      the original stays in your history unchanged, so you can compare before/after.
+    </div>
+    {% endif %}
+    <p class="page-subtitle">Enter the machine data below. Fields left at 0 or blank fall back to the same automatic defaults the original design program would compute, wherever a default exists. Sections and fields that don't apply to your current rotor type / load-curve selection are hidden automatically.</p>
+
+    <form method="POST" action="{{ url_for('asyn4.calculate') }}" id="asyn4-form">
+      {% for section_name, fields in sections.items() %}
+      <section class="field-section" id="sec-{{ loop.index }}" data-section="{{ section_name }}">
+        <h2>{{ section_name }} <span class="card-tag">{{ fields[0].card }}</span></h2>
+        <div class="field-grid">
+          {% for f in fields %}
+          <div class="field" data-field="{{ f.name }}">
+            <label for="f-{{ f.name }}">{{ f.label }}</label>
+            <div class="field-input-row">
+              {% if f.choices %}
+              <select id="f-{{ f.name }}" name="{{ f.name }}">
+                {% for val, choice_label in f.choices %}
+                <option value="{{ val }}" {% if values[f.name]|string == val|string %}selected{% endif %}>{{ choice_label }}</option>
+                {% endfor %}
+              </select>
+              {% elif f.type == 'str' %}
+              <input type="text" id="f-{{ f.name }}" name="{{ f.name }}"
+                     maxlength="{{ f.maxlen or 255 }}" value="{{ values[f.name] }}">
+              {% else %}
+              <input type="number" step="any" id="f-{{ f.name }}" name="{{ f.name }}"
+                     value="{{ values[f.name] }}">
+              {% if f.unit %}<span class="field-unit">{{ f.unit }}</span>{% endif %}
+              {% endif %}
+            </div>
+            {% if f.help %}<span class="field-help">{{ f.help }}</span>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endfor %}
+
+      <div class="submit-bar">
+        <button type="submit" class="btn">Run calculation</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+(function () {
+  var RULES = {{ visibility_rules_json | safe }};
+  var form = document.getElementById("asyn4-form");
+  var rail = document.getElementById("section-rail");
+
+  function currentValue(fieldName) {
+    var el = form.querySelector("[name='" + fieldName + "']");
+    return el ? String(el.value) : "";
+  }
+
+  function applyRules(ruleMap, getTarget) {
+    Object.keys(ruleMap).forEach(function (key) {
+      var rule = ruleMap[key];
+      var visible = rule.values.indexOf(currentValue(rule.field)) !== -1;
+      var target = getTarget(key);
+      if (target) {
+        target.style.display = visible ? "" : "none";
+      }
+    });
+  }
+
+  function updateVisibility() {
+    // Sections (and their matching rail nav links)
+    applyRules(RULES.sections, function (sectionName) {
+      return form.querySelector("[data-section='" + CSS.escape(sectionName) + "']");
+    });
+    applyRules(RULES.sections, function (sectionName) {
+      return rail.querySelector("[data-rail-for='" + CSS.escape(sectionName) + "']");
+    });
+    // Individual fields within an otherwise-always-visible section
+    applyRules(RULES.fields, function (fieldName) {
+      return form.querySelector("[data-field='" + CSS.escape(fieldName) + "']");
+    });
+  }
+
+  // Re-run whenever any controlling field changes (rotor type, load
+  // shape - and harmlessly on every other field too, which is cheap
+  // since updateVisibility() only touches display style, not values).
+  form.addEventListener("change", updateVisibility);
+  updateVisibility();
+})();
+</script>
+
+{% endblock %}

@@ -1,0 +1,7 @@
+Quantity,Value
+Dominant cooling path (IKLINK),0
+Stator yoke iron area AR1 (m2),0.03944193957014103
+Stator tooth iron area AZ1 (m2),0.023725097707358953
+Rotor yoke iron area AR2 (m2),0.074434822831838
+Rotor tooth iron area AZ2 (m2),0.026604065155037
+Skin-effect factor K1 at S=1,3.2471645535942097
